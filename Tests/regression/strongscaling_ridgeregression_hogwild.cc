@@ -1,5 +1,5 @@
 /* 
- * test_ridge_regression.cpp
+ * strongscaling_ridgeregression_hogwild.cpp
  *
  * Benchmark the 
  *
