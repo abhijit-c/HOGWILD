@@ -33,5 +33,4 @@
 
 # Ignore big datasets
 
-YearPredictionMSD.txt.zip
-YearPredictionMSD.txt
+YearPredictionMSD.*
