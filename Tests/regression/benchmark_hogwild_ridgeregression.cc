@@ -28,6 +28,7 @@
 
 #define TOL 100.0
 #define LAMBDA 2.0
+#define NUM_EPOCHS 10
 #define TRIALS_PER_CORE 10
 
 int 
@@ -41,7 +42,8 @@ main(int argc, char **argv)
   readCSV<double>("YearPredictionMSD.csv", Data);
 
   unsigned num_data = Data.rows(); unsigned num_features = Data.cols()-1;
-  unsigned num_train = int(Data.rows()*0.9); unsigned num_test = Data.rows()-num_train;
+  unsigned num_train = int(Data.rows()*0.9); 
+  unsigned num_test = Data.rows()-num_train;
 
   Eigen::MatrixXd A = Data.topRightCorner(num_train, num_features);
   Eigen::MatrixXd T = Data.bottomRightCorner(num_test, num_features);
@@ -62,14 +64,15 @@ main(int argc, char **argv)
       unsigned it = 1;
       while ( (T*x-b).squaredNorm() + LAMBDA*x.squaredNorm() >= TOL )
       {
-        unsigned i = ran
-        #pragma omp parallel for
-        for (unsigned k = 0; k < p; i++)
+        for (unsigned epoch = 0; epoch < NUM_EPOCHS; epoch++)
         {
-          unsigned i = rand() % num_train;
-          x = x - 2* //TODO: Complete update step
+          #pragma omp parallel for
+          for (unsigned k = 0; k < p; i++)
+          {
+            unsigned i = rand() % num_train;
+            x = x - eta*( 2*(A.row(i)*x - b) + 2*x(i) ); //TODO: implement eta, learning rate
+          }
         }
-
       }
 
       t_end = omp_get_wtime();
@@ -77,6 +80,5 @@ main(int argc, char **argv)
     }
     timings[p] /= TRIALS_PER_CORE;
   }
-
   return 0;
 }
