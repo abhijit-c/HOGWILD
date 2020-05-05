@@ -28,13 +28,14 @@
 
 #define LAMBDA 2.0
 #define ETA 0.1
-#define TOL 100.0
+#define TOL 0.00001
 #define MAX_ITERATIONS 1000
 #define TRIALS_PER_CORE 10
 
 int 
 main(int argc, char **argv)
 {
+  Eigen::initParallel();
   unsigned P = omp_get_max_threads();
   double timings[P];
 
@@ -64,13 +65,17 @@ main(int argc, char **argv)
       {
         for (unsigned epoch = 0; epoch < num_epochs; epoch++)
         {
+          std::vector<unsigned> batch;
+          for (unsigned k = 0; k < p; k++) { batch.push_back(rand() % num_data); }
           #pragma omp parallel for
           for (unsigned k = 0; k < p; k++)
           {
-            unsigned i = rand() % num_data;
-            x = x - learning_rate*( 2*(A.row(i)*x - b) );
+            std::cout << "I get here." << std::endl;
+            std::cout << A.row( batch[k] ) << std::endl;
+            x = x - learning_rate*( 2*(A.row( batch[k] )*x - b) );
           }
           learning_rate = learning_rate / 2;
+          std::cout << epoch << std::endl;
         }
       }
 
