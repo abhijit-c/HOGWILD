@@ -70,10 +70,8 @@ main(int argc, char **argv)
           #pragma omp parallel for
           for (unsigned k = 0; k < p; k++)
           {
-            std::cout << "I get here." << std::endl;
-            std::cout << A.row( batch[k] ) << std::endl;
             x = x - learning_rate*( 2*(A.row( batch[k] )*x - b) );
-          }
+          } // END OMP PARALLEL FOR
           learning_rate = learning_rate / 2;
           std::cout << epoch << std::endl;
         }
