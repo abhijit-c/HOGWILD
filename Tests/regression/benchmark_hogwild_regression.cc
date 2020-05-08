@@ -27,9 +27,9 @@
 #include "readCSV.h"
 
 #define LAMBDA 2.0
-#define ETA 0.1
+#define ETA 0.005
 #define TOL 0.00001
-#define MAX_ITERATIONS 1000
+#define MAX_ITERATIONS 10000
 #define TRIALS_PER_CORE 10
 
 int 
@@ -47,48 +47,23 @@ main(int argc, char **argv)
 
   Eigen::MatrixXd A = Data.topRightCorner(num_data, num_features);
   Eigen::VectorXd b = Data.col(0);
-  Eigen::VectorXd x(b.size()); Eigen::MatrixXd X(b.size(), P);
 
-  for (unsigned p = 1; p <= P; ++p)
-  { //Perform HOGWILD based ridge regression w/ p cores.
-    omp_set_num_threads(p);
-    unsigned num_epochs = num_data/p + (num_data % p != 0); //ceil(num_data/p)
-
-    for (unsigned trial = 0; trial < TRIALS_PER_CORE; ++trial);
-    { //Average runtime over number of trials
-      srand (1);
-      double t_start, t_end;
-      t_start = omp_get_wtime();
-      
-      unsigned it = 1; double learning_rate = ETA;
-      while ( 2*(A*x-b).norm() >= TOL && it <= MAX_ITERATIONS )
-      {
-        for (unsigned epoch = 0; epoch < num_epochs; epoch++)
-        {
-          std::vector<unsigned> batch;
-          for (unsigned k = 0; k < p; k++) { batch.push_back(rand() % num_data); }
-          #pragma omp parallel for
-          for (unsigned k = 0; k < p; k++)
-          {
-            x = x - learning_rate*( 2*(A.row( batch[k] )*x - b) );
-          } // END OMP PARALLEL FOR
-          learning_rate = learning_rate / 2;
-          std::cout << epoch << std::endl;
-        }
-      }
-
-      t_end = omp_get_wtime();
-      timings[p] += t_end-t_start;
-    }
-
-    X.col(p-1) = x;
-    timings[p] /= TRIALS_PER_CORE;
+  srand (1);
+  Eigen::VectorXd x = Eigen::VectorXd::Ones(b.size());
+  double t_start, t_end;
+  t_start = omp_get_wtime();
+  
+  unsigned it = 1; double learning_rate = ETA;
+  while ( 2.0*(A*x-b).norm() >= TOL && it <= MAX_ITERATIONS )
+  {
+    unsigned i = rand() % num_data;
+    x -= learning_rate*( 2 * A.row(i).transpose()*( A.row(i)*x - b(i) ) );
+    //x -= learning_rate*( 2*A.transpose()*(A*x-b) );
+    ++it;
   }
 
-  for (int p = 0; p < P; p++) { std::cout << timings[p] << ", "; }
-  std::cout << std::endl;
-  const static Eigen::IOFormat CSVFormat(Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", "\n");
-  std::ofstream file("results.txt");
-  file << X.format(CSVFormat);
+  t_end = omp_get_wtime();
+  printf("Time elapsed: %.4f\n", t_end-t_start);
+  std::cout << "Residual: " << (A*x-b).norm() << std::endl;
   return 0;
 }
