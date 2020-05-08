@@ -26,8 +26,7 @@
 
 #include "readCSV.h"
 
-#define ETA 0.02
-#define ETA_DECAY 0.9;
+#define ETA 0.01
 #define TRIALS_PER_CORE 10
 
 int 
@@ -49,7 +48,7 @@ main(int argc, char **argv)
   Eigen::VectorXd b = Data.col(0);
 
   std::array<std::atomic<double>, num_features> x;
-  for (unsigned k = 0; k < num_features; k++) { x[k] = 0; }
+  for (unsigned k = 0; k < num_features; k++) { x[k] = 1; }
 
   std::array<unsigned, num_data> ordering;
   std::iota(ordering.begin(), ordering.end(), 0);
@@ -73,10 +72,6 @@ main(int argc, char **argv)
         x[i].exchange( dgi );
       }
     }
-    //learning_rate *= ETA_DECAY;
-    Eigen::VectorXd x_comp (num_features);
-    for (unsigned k = 0; k < num_features; k++) { x_comp(k) = x[k].load(); }
-    printf("Residual: %.4f\n", (A*x_comp-b).norm());
   }
   t_end = omp_get_wtime();
 
