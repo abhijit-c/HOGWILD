@@ -34,10 +34,11 @@ main(int argc, char **argv)
 {
   Eigen::initParallel();
   omp_set_dynamic(0);
-  auto rng = std::default_random_engine {1};
+  auto rng = std::default_random_engine {}; rng.seed(0);
 
   unsigned P = omp_get_max_threads();
   double timings[P];
+  for (unsigned k = 0; k < P; k++) { timings[k] = 0; }
 
   // Read MSD dataset into memory and format matrices.
   Eigen::MatrixXd Data;
@@ -47,38 +48,45 @@ main(int argc, char **argv)
   Eigen::MatrixXd A = Data.topRightCorner(num_data, num_features);
   Eigen::VectorXd b = Data.col(0);
 
-  std::array<std::atomic<double>, num_features> x;
-  for (unsigned k = 0; k < num_features; k++) { x[k] = 1; }
-
   std::array<unsigned, num_data> ordering;
   std::iota(ordering.begin(), ordering.end(), 0);
 
-  double t_start, t_end;
-  t_start = omp_get_wtime();
-  double learning_rate = ETA;
-  for (unsigned epoch = 0; epoch < 20; epoch++)
+  for (unsigned p = 0; p < P; ++p)
   {
-    std::shuffle(ordering.begin(), ordering.end(), rng);
-    #pragma omp parallel for
-    for (unsigned k = 0; k < num_data; k++)
+    omp_set_num_threads(p+1);
+    for (unsigned trial = 0; trial < TRIALS_PER_CORE; ++trial)
     {
-      unsigned id = ordering[k];
-      double dg = 0;
-      for (unsigned i = 0; i < num_features; i++) { dg += A(id, i)*x[i].load(); }
-      dg -= b(id);
-      for (unsigned i = 0; i < num_features; i++)
+      std::array<std::atomic<double>, num_features> x;
+      for (unsigned k = 0; k < num_features; k++) { x[k] = 1; }
+
+      double t_start, t_end;
+      t_start = omp_get_wtime();
+      for (unsigned epoch = 0; epoch < 20; epoch++)
       {
-        double dgi = x[i].load() - learning_rate*( A(id,i)*dg );
-        x[i].exchange( dgi );
+        std::shuffle(ordering.begin(), ordering.end(), rng);
+        #pragma omp parallel for
+        for (unsigned k = 0; k < num_data; k++)
+        {
+          unsigned id = ordering[k];
+          double dg = 0;
+          for (unsigned i = 0; i < num_features; i++) { dg += A(id, i)*x[i].load(); }
+          dg -= b(id);
+          for (unsigned i = 0; i < num_features; i++)
+          {
+            double dgi = x[i].load() - ETA*( A(id,i)*dg );
+            x[i].exchange( dgi );
+          }
+        }
       }
+      t_end = omp_get_wtime();
+      timings[p] += t_end-t_start;
     }
+    timings[p] /= TRIALS_PER_CORE;
   }
-  t_end = omp_get_wtime();
 
-  Eigen::VectorXd x_comp (num_features);
-  for (unsigned k = 0; k < num_features; k++) { x_comp(k) = x[k].load(); }
-
-  printf("Time elapsed: %.4f\n", t_end-t_start);
-  printf("Residual: %.4f\n", (A*x_comp-b).norm());
+  for (unsigned k = 0; k < P; k++)
+  {
+    printf("T(p=%d) = %.5f\n", k+1, timings[k]);
+  }
   return 0;
 }
