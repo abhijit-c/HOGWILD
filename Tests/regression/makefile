@@ -1,12 +1,12 @@
 CXX = g++
 CXXFLAGS = -std=c++11 -O2
-LIBS = -fopenmp -I ./../
+LIBS = -fopenmp -lm -I ./../
 LIBFLAGS = -DEIGEN_DONT_PARALLELIZE 
 DEBUG = -Wall -Werror
 
 all: $(patsubst %.cc, %.out, $(wildcard *.cc))
 %.out: %.cc makefile
-	$(CXX) $(CXXFLAGS) $(LIBS) $(LIBFLAGS) $< -o $@ -lm
+	$(CXX) $(CXXFLAGS) $(LIBS) $(LIBFLAGS) $< -o $@
 clean:
 	rm -f *.out
 remake:

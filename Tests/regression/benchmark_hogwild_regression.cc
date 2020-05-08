@@ -14,56 +14,76 @@
  * v. 2.0. If a copy of the MPL was not distributed with this file, You can 
  * obtain one at http://mozilla.org/MPL/2.0/.
  */
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <omp.h>
+#include <stdio.h>
 
-#include <fstream>
-#include <vector>
+#include <algorithm>
+#include <array>
+#include <atomic>
+#include <random>
 
 #include <Eigen/Dense>
 
 #include "readCSV.h"
 
-#define LAMBDA 2.0
-#define ETA 0.005
-#define TOL 0.00001
-#define MAX_ITERATIONS 10000
+#define ETA 0.02
+#define ETA_DECAY 0.9;
 #define TRIALS_PER_CORE 10
 
 int 
 main(int argc, char **argv)
 {
   Eigen::initParallel();
+  omp_set_dynamic(0);
+  auto rng = std::default_random_engine {1};
+
   unsigned P = omp_get_max_threads();
   double timings[P];
 
   // Read MSD dataset into memory and format matrices.
   Eigen::MatrixXd Data;
   readCSV<double>("simplemat.csv", Data);
-
-  unsigned num_data = Data.rows(); unsigned num_features = Data.cols()-1;
+  unsigned const num_data = 50; unsigned const num_features = 50;
 
   Eigen::MatrixXd A = Data.topRightCorner(num_data, num_features);
   Eigen::VectorXd b = Data.col(0);
 
-  srand (1);
-  Eigen::VectorXd x = Eigen::VectorXd::Ones(b.size());
+  std::array<std::atomic<double>, num_features> x;
+  for (unsigned k = 0; k < num_features; k++) { x[k] = 0; }
+
+  std::array<unsigned, num_data> ordering;
+  std::iota(ordering.begin(), ordering.end(), 0);
+
   double t_start, t_end;
   t_start = omp_get_wtime();
-  
-  unsigned it = 1; double learning_rate = ETA;
-  while ( 2.0*(A*x-b).norm() >= TOL && it <= MAX_ITERATIONS )
+  double learning_rate = ETA;
+  for (unsigned epoch = 0; epoch < 20; epoch++)
   {
-    unsigned i = rand() % num_data;
-    x -= learning_rate*( 2 * A.row(i).transpose()*( A.row(i)*x - b(i) ) );
-    //x -= learning_rate*( 2*A.transpose()*(A*x-b) );
-    ++it;
+    std::shuffle(ordering.begin(), ordering.end(), rng);
+    #pragma omp parallel for
+    for (unsigned k = 0; k < num_data; k++)
+    {
+      unsigned id = ordering[k];
+      double dg = 0;
+      for (unsigned i = 0; i < num_features; i++) { dg += A(id, i)*x[i].load(); }
+      dg -= b(id);
+      for (unsigned i = 0; i < num_features; i++)
+      {
+        double dgi = x[i].load() - learning_rate*( A(id,i)*dg );
+        x[i].exchange( dgi );
+      }
+    }
+    //learning_rate *= ETA_DECAY;
+    Eigen::VectorXd x_comp (num_features);
+    for (unsigned k = 0; k < num_features; k++) { x_comp(k) = x[k].load(); }
+    printf("Residual: %.4f\n", (A*x_comp-b).norm());
   }
-
   t_end = omp_get_wtime();
+
+  Eigen::VectorXd x_comp (num_features);
+  for (unsigned k = 0; k < num_features; k++) { x_comp(k) = x[k].load(); }
+
   printf("Time elapsed: %.4f\n", t_end-t_start);
-  std::cout << "Residual: " << (A*x-b).norm() << std::endl;
+  printf("Residual: %.4f\n", (A*x_comp-b).norm());
   return 0;
 }
