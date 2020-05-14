@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <iostream>
 #include <random>
 
 #include <Eigen/Dense>
@@ -54,9 +55,9 @@ main(int argc, char **argv)
   for (unsigned p = 0; p < P; ++p)
   {
     omp_set_num_threads(p+1);
+    std::array<std::atomic<double>, num_features> x;
     for (unsigned trial = 0; trial < TRIALS_PER_CORE; ++trial)
     {
-      std::array<std::atomic<double>, num_features> x;
       for (unsigned k = 0; k < num_features; k++) { x[k] = 1; }
 
       double t_start, t_end;
