@@ -1,0 +1,52 @@
+\section{\hogwild}
+
+Prior to 2011, parallel stochastic gradient methods had been introduced, but
+most suffered from poor scaling due to the necessity of locks. A naive
+implementation could look like:
+\begin{breakablealgorithm}
+  \caption{Very Naive Parallel Stochastic Gradient}
+  \label{alg:naivePSG}
+  \begin{algorithmic}[1]
+    \Require Number of data points $N$, seperable loss function $f
+    = \sum_{e \in E} f_e(x_e)$, Initial $x$.
+    \For{epoch $= 0 \to$ MAX\_EPOCHS}
+      \State \#pragma omp parallel for
+      \For{$k = 0 \to N$}
+        \State Choose $i$ uniformly from $\{1, \dots, |E|\}$.
+        \State \#pragma omp critical
+        \Indent
+          \State Read current parameters $x$.
+          \State Compute $\nabla f_i(x)$.
+          \State $x \gets x - \eta \nabla f_i(x)$.
+        \EndIndent
+      \EndFor
+    \EndFor
+  \end{algorithmic}
+\end{breakablealgorithm}
+But it's clear here that such an algorithm would only effectively be
+parallelizing the unform sample of $i$ in $\{1, \dots, |E|\}$. You can improve
+the above by selectively locking the values in $x$ which actually change in the
+stochastic gradient step (say if $\nabla f_i(x)$ was sparse), but because the
+process of acquiring locks is much more expensive than floating point
+arithmetic, this helps little.
+
+However, in 2011, the article "\hogwild: A Lock-Free Approach to Parallelizing
+Stochastic Gradient Descent" proposed a very simple solution to this problem.
+Remove the locks!
+\begin{breakablealgorithm}
+  \caption{Very Naive Parallel Stochastic Gradient}
+  \label{alg:naivePSG}
+  \begin{algorithmic}[1]
+    \Require Number of data points $N$, seperable loss function $f
+    = \sum_{e \in E} f_e(x_e)$, Initial $x$.
+    \For{epoch $= 0 \to$ MAX\_EPOCHS}
+      \State \#pragma omp parallel for
+      \For{$k = 0 \to N$}
+        \State Choose $i$ uniformly from $\{1, \dots, |E|\}$.
+        \State Read current parameters $x$.
+        \State Compute $\nabla f_i(x)$.
+        \State $x \gets x - \eta \nabla f_i(x)$.
+      \EndFor
+    \EndFor
+  \end{algorithmic}
+\end{breakablealgorithm}

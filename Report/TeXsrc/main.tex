@@ -1,0 +1,84 @@
+% --------------------------------------------------------------
+% Abhi's Standard math Preamble.
+% --------------------------------------------------------------
+ 
+% Document packages / layout
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry} %1 inch margins
+
+% Figure Packages
+\usepackage{float}
+\usepackage[plainpages=false, colorlinks=true, allcolors=cyan]{hyperref}
+\usepackage{subcaption}
+\usepackage{wrapfig}
+\usepackage[export]{adjustbox} %center option in include graphics
+
+% Math Packages
+\usepackage{amsmath,amsthm,amssymb,mathrsfs,bm}
+\usepackage{mathtools}
+\usepackage{commath}
+\usepackage{esvect} %For derivatives of vectors \vec{u}' -> \vv{u}'
+
+% Code input 
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+%Manual indentation 
+\algdef{SE}[SUBALG]{Indent}{EndIndent}{}{\algorithmicend\ }%
+\algtext*{Indent}
+\algtext*{EndIndent}
+\makeatletter
+\newenvironment{breakablealgorithm}
+  {% \begin{breakablealgorithm}
+   \begin{center}
+     \refstepcounter{algorithm}% New algorithm
+     \hrule height.8pt depth0pt \kern2pt% \@fs@pre for \@fs@ruled
+     \renewcommand{\caption}[2][\relax]{% Make a new \caption
+       {\raggedright\textbf{\ALG@name~\thealgorithm} ##2\par}%
+       \ifx\relax##1\relax % #1 is \relax
+         \addcontentsline{loa}{algorithm}{\protect\numberline{\thealgorithm}##2}%
+       \else % #1 is not \relax
+         \addcontentsline{loa}{algorithm}{\protect\numberline{\thealgorithm}##1}%
+       \fi
+       \kern2pt\hrule\kern2pt
+     }
+  }{% \end{breakablealgorithm}
+     \kern2pt\hrule\relax% \@fs@post for \@fs@ruled
+   \end{center}
+  }
+\makeatother
+
+% Quality of Life Packages
+\usepackage{enumerate}
+\usepackage{cite}
+
+\newcommand{\coarse}{\mathcal{G}}
+\newcommand{\fine}{\mathcal{F}}
+\newcommand{\hogwild}{H{\sc ogwild}!}
+
+\newtheorem*{lemma*}{Lemma}
+\newtheorem*{theorem*}{Theorem}
+ 
+\begin{document}
+ 
+\title{An Investigation into \hogwild\cite{2011niu}}
+\author{%
+  Abhijit Chowdhary \\
+  \texttt{ac6361@nyu.edu}
+}
+\date{New York University --- \today}
+
+\maketitle
+
+\addtocontents{toc}{~\hfill\textbf{Page}\par} % Add 'page' above pg numbers
+\tableofcontents
+\clearpage
+
+\input{./src/introduction.tex}
+\input{./src/hogwild.tex}
+\input{./src/implementation.tex}
+
+\clearpage
+\bibliography{references}{}
+\bibliographystyle{alpha}
+
+\end{document}
