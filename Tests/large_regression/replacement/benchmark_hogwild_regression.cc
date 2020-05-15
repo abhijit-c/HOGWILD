@@ -29,7 +29,7 @@
 
 #define ETA 0.001
 #define NUM_EPOCHS 50
-#define TRIALS_PER_CORE 1
+#define TRIALS_PER_CORE 5
 
 int 
 main(int argc, char **argv)
@@ -49,7 +49,8 @@ main(int argc, char **argv)
 
   // Construct sampling w/ replacement vector.
   std::uniform_int_distribution<std::mt19937::result_type> distN(0,num_data-1);
-  std::array<unsigned, num_data*NUM_EPOCHS> rand_selection;
+  //std::array<unsigned, num_data*NUM_EPOCHS> rand_selection;
+  unsigned *rand_selection = new unsigned[num_data*NUM_EPOCHS];
   for (unsigned k = 0; k < num_data*NUM_EPOCHS; k++)
   {
     rand_selection[k] = distN(gen);
@@ -90,5 +91,7 @@ main(int argc, char **argv)
     double E = 0.5*(A*xx-b).squaredNorm();
     printf("T(p=%d) = %.5f, E(p=%d) = %.5f\n", p+1, t, p+1, E);
   } // End trials for processor count p+1
+
+  delete []rand_selection;
   return 0;
 }

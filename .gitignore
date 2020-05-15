@@ -34,3 +34,4 @@
 # Ignore big datasets
 
 YearPredictionMSD.*
+simplemat.*
