@@ -27,9 +27,8 @@
 
 #include "readCSV.h"
 
-#define ETA 0.00005
+#define ETA 0.00001
 #define NUM_EPOCHS 50
-#define TRIALS_PER_CORE 5
 
 int 
 main(int argc, char **argv)
@@ -44,8 +43,10 @@ main(int argc, char **argv)
 
   // Read MSD dataset into memory and format matrices.
   Eigen::MatrixXd Data;
-  readCSV<double>("../simplemat.csv", Data);
-  unsigned const num_data = 160000; unsigned const num_features = 400;
+  readCSV<double>("simplemat.csv", Data);
+  std::cout << Data.rows() << std::endl;
+  std::cout << Data.cols() << std::endl;
+  unsigned const num_data = 400; unsigned const num_features = 160000;
 
   Eigen::MatrixXd A = Data.topRightCorner(num_data, num_features);
   Eigen::VectorXd b = Data.col(0);
@@ -53,15 +54,16 @@ main(int argc, char **argv)
   std::array<unsigned, num_data> ordering;
   std::iota(ordering.begin(), ordering.end(), 0);
 
-  std::array<std::atomic<double>, num_features> x;
+  //std::array<std::atomic<double>, num_features> x;
+  std::atomic<double> *x = new std::atomic<double>[num_features];
   Eigen::MatrixXd X(num_features,1);
   for (unsigned k = 0; k < num_features; k++) { x[k] = 1; X(k) = 1; }
   printf("%f\n", 0.5*(A*X-b).squaredNorm());
 
-  //for (unsigned epoch = 0; epoch < NUM_EPOCHS; epoch++)
-  //{
+  for (unsigned epoch = 0; epoch < NUM_EPOCHS; epoch++)
+  {
     std::shuffle(ordering.begin(), ordering.end(), rng);
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for (unsigned k = 0; k < num_data; k++)
     {
       unsigned id = ordering[k];
@@ -73,11 +75,15 @@ main(int argc, char **argv)
         double dgi = x[i].load() - ETA*( A(id,i)*dg );
         x[i].exchange( dgi );
       }
-      for (unsigned k = 0; k < num_features; k++) { X(k) = x[k].load(); }
-      printf("%f\n", 0.5*(A*X-b).squaredNorm());
     }
-
-  //}
+    for (unsigned k = 0; k < num_features; k++) { X(k) = x[k].load(); }
+    double epsilon = 0.5*(A*X-b).squaredNorm();
+    printf("%f\n", epsilon);
+    if (epsilon < 1e-5)
+    {
+      break;
+    }
+  }
 
   return 0;
 }
