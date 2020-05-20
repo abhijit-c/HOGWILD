@@ -51,8 +51,6 @@
 \usepackage{enumerate}
 \usepackage{cite}
 
-\newcommand{\coarse}{\mathcal{G}}
-\newcommand{\fine}{\mathcal{F}}
 \newcommand{\hogwild}{H{\sc ogwild}!}
 
 \newtheorem*{lemma*}{Lemma}
@@ -75,9 +73,13 @@
 
 \input{./src/introduction.tex}
 \input{./src/hogwild.tex}
-\input{./src/implementation.tex}
+\input{./src/convergence.tex}
+\input{./src/efficiency.tex}
+\input{./src/asyncnoise.tex}
+\input{./src/conclusion.tex}
 
 \clearpage
+\addcontentsline{toc}{section}{Works Cited}
 \bibliography{references}{}
 \bibliographystyle{alpha}
 

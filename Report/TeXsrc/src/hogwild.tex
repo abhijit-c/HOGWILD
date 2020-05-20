@@ -9,9 +9,9 @@ implementation could look like:
   \begin{algorithmic}[1]
     \Require Number of data points $N$, seperable loss function $f
     = \sum_{e \in E} f_e(x_e)$, Initial $x$.
-    \For{epoch $= 0 \to$ MAX\_EPOCHS}
+    \For{epoch $= 1 \to$ MAX\_EPOCHS}
       \State \#pragma omp parallel for
-      \For{$k = 0 \to N$}
+      \For{$k = 1 \to N$}
         \State Choose $i$ uniformly from $\{1, \dots, |E|\}$.
         \State \#pragma omp critical
         \Indent
@@ -23,30 +23,73 @@ implementation could look like:
     \EndFor
   \end{algorithmic}
 \end{breakablealgorithm}
-But it's clear here that such an algorithm would only effectively be
-parallelizing the unform sample of $i$ in $\{1, \dots, |E|\}$. You can improve
-the above by selectively locking the values in $x$ which actually change in the
-stochastic gradient step (say if $\nabla f_i(x)$ was sparse), but because the
-process of acquiring locks is much more expensive than floating point
-arithmetic, this helps little.
+Note that the version presented above is one with a fixed number of iterations,
+as the discussion of stopping criteria seems to be similar to that of the
+stochastic gradient method, and for extremely large data sets, is often
+heuristic. But it's clear here that such an algorithm would only effectively be
+parallelizing the unform sample of $i$ in $\{1, \dots, |E|\}$, and it's overall
+parallel efficiency would likely be poor. Technically, you can improve the above
+by replacing the critical section with selective locks on components of $x$
+based on the sparsity pattern of $\nabla f_i(x)$, but because the process of
+acquiring locks is much more expensive than floating point arithmetic, this
+helps little.
 
 However, in 2011, the article "\hogwild: A Lock-Free Approach to Parallelizing
-Stochastic Gradient Descent" proposed a very simple solution to this problem.
-Remove the locks!
+Stochastic Gradient Descent" by Niu et. al. \cite{2011niu} proposed a very
+simple solution to this problem.  Remove the locks!%
+\footnote{
+  Reportedly discovered by accident when {\it Feng Niu} commented out the locks
+  on his SGD when debugging; I wish my troubleshooting was nearly as
+  effective...
+}\\\\
 \begin{breakablealgorithm}
-  \caption{Very Naive Parallel Stochastic Gradient}
-  \label{alg:naivePSG}
+  \caption{\hogwild: Asynchronous Stochastic Gradient with replacement}
+  \label{alg:hogwildwreplacement}
   \begin{algorithmic}[1]
     \Require Number of data points $N$, seperable loss function $f
     = \sum_{e \in E} f_e(x_e)$, Initial $x$.
-    \For{epoch $= 0 \to$ MAX\_EPOCHS}
+    \For{epoch $= 1 \to$ MAX\_EPOCHS}
       \State \#pragma omp parallel for
-      \For{$k = 0 \to N$}
+      \For{$k = 1 \to N$}
         \State Choose $i$ uniformly from $\{1, \dots, |E|\}$.
         \State Read current parameters $x$.
         \State Compute $\nabla f_i(x)$.
-        \State $x \gets x - \eta \nabla f_i(x)$.
+        \State $x \gets x - \eta \nabla f_i(x)$. \Comment{Must be done
+        atomically}
       \EndFor
     \EndFor
   \end{algorithmic}
 \end{breakablealgorithm}
+and should we want to sample without replacement%
+\footnote{As it turns out, sampling without replacement provides small amounts
+  of benefit with respect to the asynchronous noise generated, see section
+  \ref{sec:asyncnoise} for further analysis on the topic.
+} the algorithm is easily modified to:
+\begin{breakablealgorithm}
+  \caption{\hogwild: Asynchronous Stochastic Gradient without replacement}
+  \label{alg:hogwildworeplacement}
+  \begin{algorithmic}[1]
+    \Require Number of data points $N$, seperable loss function $f
+    = \sum_{e \in E} f_e(x_e)$, Initial $x$.
+    \For{epoch $= 1 \to$ MAX\_EPOCHS}
+      \State Let $P$ be a random permutation of $\{1, \dots, |E|\}$.
+      \Comment{i.e. a Fisher-Yates Shuffle.}
+      \State \#pragma omp parallel for
+      \For{$k = 1 \to N$}
+        \State $i \gets P[k]$.
+        \State Read current parameters $x$.
+        \State Compute $\nabla f_i(x)$.
+        \State $x \gets x - \eta \nabla f_i(x)$. \Comment{Must be done
+        atomically}
+      \EndFor
+    \EndFor
+  \end{algorithmic}
+\end{breakablealgorithm}
+
+It should be noted that although the formal OMP locks have been removed, atomic
+operations are still required in order to prevent mutual exclusion. However, no
+guards have been placed to prevent a thread from overwriting another's
+computation midway through, and it's not obvious as to why such a race condition
+wouldn't destroy the performance of the Stochastic Gradient method. However,
+with certain guarantees on the sparsity of the function, one can show that this
+converges in general.
