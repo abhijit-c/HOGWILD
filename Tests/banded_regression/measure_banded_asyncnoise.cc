@@ -29,10 +29,10 @@
 #include "compute_variance.h"
 
 #define N 1024
-#define ETA 0.00001
-#define NUM_EPOCHS 5
+#define ETA 0.001
+#define NUM_EPOCHS 20
 #define TRIALS_PER_BAND 100
-#define MAX_BAND 1
+#define MAX_BAND_POW 10
 
 int 
 main(int argc, char **argv)
@@ -53,8 +53,9 @@ main(int argc, char **argv)
   
   std::vector<double> computed_variances;
   Eigen::MatrixXd X = Eigen::MatrixXd::Constant(N, 1, 1.0);
-  for (unsigned band = 0; band < 1; band++)
+  for (unsigned bp = 0; bp < MAX_BAND_POW; bp++)
   {
+    unsigned band = 1 << bp;
     Eigen::MatrixXd A = Eigen::MatrixXd::Zero(N, N);
     A.diagonal(0) = Eigen::MatrixXd::Random(N,1);
     for (int k = 1; k <= band; k++)
@@ -94,7 +95,7 @@ main(int argc, char **argv)
   }
   for (unsigned k = 0; k < computed_variances.size(); k++)
   {
-    printf("Var(B=k) = %.9f\n", computed_variances[k]);
+    printf("%.9f\n", computed_variances[k]);
   }
   delete []rand_selection;
   return 0;

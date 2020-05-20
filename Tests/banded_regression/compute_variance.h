@@ -24,10 +24,6 @@ compute_variance(std::vector<double> const &x)
   {
     variance += (x[k] - mean)*(x[k] - mean);
   }
-  printf("%f\n", mean);
-  printf("%f\n", (x[N/2]-mean));
-  printf("%f\n", variance);
-  printf("%f\n", variance/(N-1));
   return variance / (N-1);
 }
 
