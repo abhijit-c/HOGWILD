@@ -27,7 +27,7 @@
 
 #include "readCSV.h"
 
-#define ETA 0.001
+#define ETA 0.0009
 #define NUM_EPOCHS 50
 
 int 

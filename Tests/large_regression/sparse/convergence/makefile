@@ -1,6 +1,6 @@
 CXX = g++
 CXXFLAGS = -std=c++11 -O3
-LIBS = -fopenmp -lm -I ./../
+LIBS = -fopenmp -lm -I ./../../../
 LIBFLAGS = -DEIGEN_DONT_PARALLELIZE 
 DEBUG = -Wall -Werror
 
