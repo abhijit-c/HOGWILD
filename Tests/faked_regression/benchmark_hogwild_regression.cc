@@ -28,8 +28,8 @@
 #include "readCSV.h"
 
 #define ETA 0.01
-#define NUM_EPOCHS 100
-#define TRIALS_PER_CORE 10
+#define NUM_EPOCHS 50
+#define TRIALS_PER_CORE 3
 
 int 
 main(int argc, char **argv)
@@ -78,7 +78,11 @@ main(int argc, char **argv)
             double dgi = x[i].load() - ETA*( A(id,i)*dg );
             x[i].exchange( dgi );
           }
+          double tt = omp_get_wtime();
+          double ttt = omp_get_wtime();
+          while (ttt < tt+.05) { ttt = omp_get_wtime(); }
         }
+        printf("%d\n", epoch); 
       }
       t_end = omp_get_wtime();
       timings[p] += t_end-t_start;

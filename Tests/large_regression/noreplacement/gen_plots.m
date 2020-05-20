@@ -1,6 +1,6 @@
 clear alll; close all;
 
-t = load('timings.txt')
+t = load('timings.txt');
 P = (1:length(t))';
 
 figure();
