@@ -9,6 +9,7 @@
 % Figure Packages
 \usepackage{float}
 \usepackage[plainpages=false, colorlinks=true, allcolors=cyan]{hyperref}
+\usepackage{url}
 \usepackage{subcaption}
 \usepackage{wrapfig}
 \usepackage[export]{adjustbox} %center option in include graphics
@@ -52,13 +53,19 @@
 \usepackage{cite}
 
 \newcommand{\hogwild}{H{\sc ogwild}!}
+\newcommand{\E}[1]{\mathbb{E}\left[#1\right]}
+\newcommand{\Prob}[1]{\mathbb{P}\left[#1\right]}
+\newcommand{\Var}[1]{{\rm Var}\left[#1\right]}
 
-\newtheorem*{lemma*}{Lemma}
-\newtheorem*{theorem*}{Theorem}
+\newcommand{\e}{\varepsilon}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}{Lemma}[section]
+\newtheorem{definition}{Definition}[section]
  
 \begin{document}
  
-\title{An Investigation into \hogwild\cite{2011niu}}
+\title{An Investigation into \hogwild}
 \author{%
   Abhijit Chowdhary \\
   \texttt{ac6361@nyu.edu}
@@ -72,7 +79,7 @@
 \clearpage
 
 \input{./src/introduction.tex}
-\input{./src/hogwild.tex}
+\input{./src/hogwild.tex} 
 \input{./src/convergence.tex}
 \input{./src/efficiency.tex}
 \input{./src/asyncnoise.tex}

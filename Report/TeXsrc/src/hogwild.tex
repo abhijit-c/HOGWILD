@@ -35,13 +35,13 @@ acquiring locks is much more expensive than floating point arithmetic, this
 helps little.
 
 However, in 2011, the article "\hogwild: A Lock-Free Approach to Parallelizing
-Stochastic Gradient Descent" by Niu et. al. \cite{2011niu} proposed a very
-simple solution to this problem.  Remove the locks!%
+Stochastic Gradient Descent" by Niu et al. \cite{2011NRRW} proposed a very
+simple solution to this problem. Remove the locks!%
 \footnote{
-  Reportedly discovered by accident when {\it Feng Niu} commented out the locks
-  on his SGD when debugging; I wish my troubleshooting was nearly as
-  effective...
-}\\\\
+  Apparently this was discovered by accident by Feng Niu, one of the original
+  paper's authors, when he was debugging stochastic gradient method code. I wish
+  my troubleshooting was nearly as effective... \cite{2014Recht}
+}
 \begin{breakablealgorithm}
   \caption{\hogwild: Asynchronous Stochastic Gradient with replacement}
   \label{alg:hogwildwreplacement}
@@ -60,11 +60,8 @@ simple solution to this problem.  Remove the locks!%
     \EndFor
   \end{algorithmic}
 \end{breakablealgorithm}
-and should we want to sample without replacement%
-\footnote{As it turns out, sampling without replacement provides small amounts
-  of benefit with respect to the asynchronous noise generated, see section
-  \ref{sec:asyncnoise} for further analysis on the topic.
-} the algorithm is easily modified to:
+and should we want to sample without replacement the algorithm is easily
+modified to:
 \begin{breakablealgorithm}
   \caption{\hogwild: Asynchronous Stochastic Gradient without replacement}
   \label{alg:hogwildworeplacement}
@@ -91,5 +88,5 @@ operations are still required in order to prevent mutual exclusion. However, no
 guards have been placed to prevent a thread from overwriting another's
 computation midway through, and it's not obvious as to why such a race condition
 wouldn't destroy the performance of the Stochastic Gradient method. However,
-with certain guarantees on the sparsity of the function, one can show that this
-converges in general.
+with certain assumptions one can show that \hogwild\ behaves roughly like a noisy
+stochastic gradient method, and thus shares its convergence properties.
