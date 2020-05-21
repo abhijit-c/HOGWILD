@@ -1,1 +1,61 @@
 \section{Conclusions and Future Work}\label{sec:conclusion}
+
+In conclusion, \hogwild\ is a great method to very easily parallelize exist
+stochastic gradient code. Although if the component gradient computation is
+memory bound, you're unlikely to see much scaling in speedup, if instead it's
+CPU bound, you may see near-perfect scaling, which is great. Of course, as seen
+in the wine-quality tests, because this is a stochastic method after all (and
+is, in theory, viewed as a noisy approximation to stochastic gradient, which
+itself can be viewed as a noisy approximation to gradient descent), we have to
+wary about such noise preventing us from usable results.
+
+For non-convex problems, although martingale theory helps us to prove
+convergence for a few simple cases, it seems that nothing quite addresses the
+general case yet, although the existing theory is strong for any convex problem.
+Personally, something I will keep an eye out in the future for is papers on
+extending the presented theory to more non-convex objectives, as I found that
+paper to be an interesting read.
+
+There were a couple interesting directions of research that I didn't have time
+to look into that I do plan to over the rest of this summer. One paper that
+I read, but didn't have the time to fully digest was on CYCLADES
+\cite{2016PLTPZJRRR}, which was a version of Asynchronous stochastic gradient
+descent which introduces no asynchronous noise via a deferred updating
+procedure, which was {\it very} interesting, as most of the theoretical analysis
+on \hogwild\ centered around showing the noise to be insignificant, and then
+using the analysis on the stochastic gradient method. There was also another
+paper by Nguyen et al. \cite{2018NNDRST} which managed to show convergence of
+SGD and therefore \hogwild\ without the bounded gradient assumption, which is
+obviously a very important relaxation. Finally, I had wanted to implement more
+types of optimization problems, but I am somewhat uncomfortable with the field
+as I've never taken a machine learning course before; I intend to self-study
+a bit and come back to implement a classication style \hogwild. Finally,
+I wanted to explore GPU implementations, but I read a couple of references
+citing that it wasn't trivial to get large speedups with a GPU, and I decided to
+leave it till later.
+
+Overall, I'm actually a little bit dissapointed in my progress for this project.
+I don't want to blame it all entirely on COVID-19%
+\footnote{
+  All of my other classes transitioned to a week-long take-home type of final,
+  which was also made extremely difficult to combat the fact that we could use
+  our notes. I actually think I learned a lot more this way, but the 7 days
+  I spent on my basic probability exam, despite managing an A, was one of the more
+  desperate time of my college life...
+}, as I did lose large chunks of time to failed directions of research in this.
+For example, the $k$-banded matrix analysis from the convergence section, was
+initially spawned from banded matrices arising from finite difference
+discretizations of PDEs, and I had wanted to try and tackle them from an
+optimization perspective. But in hindsight this is totally silly, as \hogwild\
+is a noisy approximation to a noisy algorithm, it was going to be hard to
+converge to any real smooth solution, without either running into a noise ball,
+or running for an absurd number of epochs, destroying the purpose of \hogwild\
+anyway. In the end, such matrices are already well-conditioned, so there's no
+need for this. I had wondered if stochastic DEs would have any applications, but
+I don't know anything about them and I'm already late so I skipped it. Anyway,
+I spent way longer than I care to admit on the PDE direction. In addition, about
+midway through this project my HPC account on Prince here at NYU expired, which
+is why my tests are only run on a 16 thread machine, which is my home desktop
+which I built not too long ago. Fighting with the support deparment to stop
+disabling my Courant account has been problematic my entire undergraduate here,
+but I think my scaling results were clear anyway.
