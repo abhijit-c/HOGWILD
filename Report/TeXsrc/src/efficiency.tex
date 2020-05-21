@@ -16,7 +16,7 @@ number of processors. Thus, Amadahl's law turns out to be pretty trivial in the
 case of asynchronous stochastic methods, in that $S_{{\rm latency}}(s) = s = P$.
 
 However, in practice this is most-definitely not observed, not in my tests, and
-neither in the original paper \cite{2011NRRW}. See figure \ref{fig:scaling} for
+neither in the original paper \cite{2011NRRW}. See Figure \ref{fig:scaling} for
 my scaling results.
 \begin{figure}[!htb]
   \centering
@@ -26,7 +26,7 @@ my scaling results.
   } \label{fig:scaling}
 \end{figure}
 Specifically for my tests, it's not too hard to tell what's breaking the
-perfomrance. Simply put, we're being cruel to the cache. Both of these scaling
+performance. Simply put, we're being cruel to the cache. Both of these scaling
 studies were computing over pretty large matrices, $A \in \mathbb{R}^{400^2
 \times 400}$, which in just information is 0.5GB large. Furthermore, the column
 of $400^2$ doubles, for my processor the Ryzen 3700X, doesn't even have a tenth
@@ -45,7 +45,7 @@ data fits comfortably into the L1 Cache divided by the number of threads, but
 instead requires lots of computation to compute, we should see near optimal
 rates of convergence. To simulate this while staying in a linear regression
 model, we can cheat and add a sleep statement at the end of each stochastic
-update, simulating additional computation. See figure \ref{fig:heavygrad} for
+update, simulating additional computation. See Figure \ref{fig:heavygrad} for
 the results of such a test.
 \begin{figure}[!htb]
   \centering
