@@ -27,8 +27,8 @@
 
 #include "readCSV.h"
 
-#define ETA 0.00001
-#define NUM_EPOCHS 14
+#define ETA 0.00025
+#define NUM_EPOCHS 5
 
 int 
 main(int argc, char **argv)
@@ -57,7 +57,7 @@ main(int argc, char **argv)
   std::atomic<double> *x = new std::atomic<double>[num_features];
   Eigen::MatrixXd X(num_features,1);
   for (unsigned k = 0; k < num_features; k++) { x[k] = 1; X(k) = 1; }
-  fprintf(fresults, "%f\n", 0.5*(A*X-b).squaredNorm());
+  fprintf(fresults, "%f\n", (0.5/num_data)*(A*X-b).squaredNorm());
 
   for (unsigned epoch = 0; epoch < NUM_EPOCHS; epoch++)
   {
@@ -71,12 +71,12 @@ main(int argc, char **argv)
       dg -= b(id);
       for (unsigned i = 0; i < num_features; i++)
       {
-        double dgi = x[i].load() - ETA*( A(id,i)*dg );
+        double dgi = x[i].load() - ETA*(1.0/num_data)*( A(id,i)*dg + num_data*x[i].load() );
         x[i].exchange( dgi );
       }
     }
     for (unsigned k = 0; k < num_features; k++) { X(k) = x[k].load(); }
-    double epsilon = 0.5*(A*X-b).squaredNorm();
+    double epsilon = (0.5/num_data)*(A*X-b).squaredNorm();
     fprintf(fresults, "%f\n", epsilon);
     if (epsilon < 1e-5)
     {
