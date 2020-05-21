@@ -85,9 +85,9 @@ more like $x_{t+1} = x_t - \nabla f_t(v_t)$ where $v_t$'s entries were the
 entries of some previous iterate $x$. Let $\tau_{i,t}$ denote the lag for the
 update of the $i$th component of $x_{t+1}$, i.e. $(v_t)_i = ( x_{t-\tau_{i,t}}
 )_i$. Then we recognize that this lag for each component $i$ (supposing the
-computer hasn't crashed) must be bounded; let $\tau'$ be the the maximum of such
-bounds and let $\tau = \E{\tau'}$. This is known in literature as the {\it
-worst-case expected delay}.
+computer hasn't crashed) must be bounded; let $\tau'$ be the the maximum over
+$i$ of such bounds and let $\tau = \E{\tau'}$. This is known in literature as
+the {\it worst-case expected delay}.
 
 Finally, we need one last definition, mainly one of convinience, to proceed
 onward. This describes the main conditions upon a rate supermartingale necessary
@@ -120,4 +120,83 @@ rate.
 
 \subsubsection{Convergence of \hogwild}
 
-Now that we have
+Finally, now that all of the machinery has been defined, we can get to the main
+result:
+\begin{theorem} \label{thm:convergence}
+  Suppose we have an asynchronous stochastic algorithm with associated rate
+  supermartingale $W$ which is $(H,R,\xi)$ bounded with horizon $B$.
+  Furthermore, assume that $HR\xi \tau < 1$; then $\forall T \leq B$:
+  \[
+    \Prob{F_T} \leq \frac{\E{W(0, x_0)}}{(1-HR\xi\tau)T}
+  \]
+\end{theorem}
+Before we prove it, we briefly discuss how to use this theorem in practice.
+Suppose we have a loss function $f$ which we want to use \hogwild\ on to
+minimize. Then first we need to obtain a rate supermartingale proving the
+problem%
+\footnote{
+  In the article, De Sa et al. describes this as being no more difficult than
+  proving serial convergence, but the proof (in the convex case) doesn't seem to
+  have any similarity between it and serial convergence, so I can't validate
+  this claim.
+}, determine $H, R, \xi$ such that $W$ is $(H,R,\xi)$-bounded, and then apply
+this theorem to get a proper rate of convergence. This is a very powerful
+theorem, as we'll be able to state later, given strongly convex $f$ and with the
+other required bounds, we can blanket prove that \hogwild\ works on them.
+Furthermore, for nicer non-convex problems, such as the low-rank least-squared
+matrix completion problem presented in the paper, it's easy to derive a proper
+rate supermartingale as well.
+
+Now, with respect to the proof, we only outline it because it's mainly just
+a repeated application of the above bounds we have in order to lower bound away
+noise terms, and then it follows the path outlined in the serial stochastic
+gradient method proof.
+\begin{proof}
+  \begin{enumerate}[(i)]
+    \item With $W$ defined exactly as in the serial case, it's not a rate
+      supermartingale. Instead, from it we construct rate supermartingale $V_t$,
+      where $\forall t, x$ where $x_u$ not converged $\forall u < t$:
+      \[
+        V_t(x_t, \dots, x_0) = W_t(x_t, \dots, x_0) 
+        - \underbrace{HR\xi \tau t}_{(1)}
+        + \underbrace{
+          HR \sum_{k=1}^\infty \norm{x_{t-k+1}-x_{t-k}} \sum_{m=k}^\infty
+          \Prob{\tau' \geq m}
+        }_{(2)}
+      \]
+      where (1) allows for longer iteration counts (as HOGWILD needs to allow
+      for given noise corruption), and (2) measures distance between recent
+      iterates. Otherwise if $x_u$ is converged, then we let $V_t(x_t, \dots,
+      x_0) = V_u(x_u, \dots, x_0)$. Basically, we've defined $V$ a stopped
+      process.
+    \item Show $V_t$ is a rate supermartingale for \hogwild
+    \item Using a similar process to the serial stochastic gradient proof, show
+      that $\E{V_T} \leq \E{V_0} = \E{W_0}$, then using the law of total
+      expectation on this with $F_T$, and recalling that $\E{W_T | F_T} \geq T$,
+      we recieve the desired result.
+  \end{enumerate}
+\end{proof}
+Given this, the general theorem for the convex case is:
+\begin{theorem} \label{thm:convexconv}
+  Consider trying to minimize $f$, which is:
+  \begin{itemize}
+    \item Strongly convex with parameter $c$.
+    \item $\nabla f_k$ Continuously differentiable in $||\cdot||_1$ with
+      Lipschitz constant $L$.
+    \item Upper bounded second moment of the gradient by $M^2$
+    \item Success criteria $\norm{x-x^*}^2 \leq \e$, for some $\e > 0$.
+  \end{itemize}
+  Then we can construct rate supermartingale $W_t$ such that it's $(H,R,\xi)$
+  bounded with $H = 2\sqrt{\e}(2\eta c\e - \eta^2 M^2)^{-1}, R = \eta L,
+  \xi = \eta M$. Then choosing step size $\eta$ (for some $\nu \in (0,1)$):
+  \[
+    \eta = \frac{c\e \nu}{M^2 + 2LM\tau\sqrt{\e}}
+  \]
+  then we recieve:
+  \[
+    \Prob{F_T} \leq \frac{M^2 + 2LM\tau\sqrt{\e}}{c^2\e\nu T} \log
+    \left(
+      e \norm{x_0 -x^*}^2 \e^{-1}
+    \right)
+  \]
+\end{theorem}
